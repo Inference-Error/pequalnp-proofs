@@ -82,15 +82,18 @@ theorem PEqualNP.Outside.R_meta_3406_617
           using ih (step w g) (by simp [step]; omega)
     let D : Circuit := ⟨prefixGates.mapIdx (fun j g => clip (11 + j) g), C.output⟩
     have dsize : D.size = n := by
-      simp [D, Circuit.size, plen]
+      change (prefixGates.mapIdx (fun j g => clip (11 + j) g)).length = n
+      rw [List.length_mapIdx, plen]
     have dfan : FanInTwo D := by
       intro g hg
       obtain ⟨j, hj, hgj⟩ := List.mem_iff_getElem.mp hg
       have hp : j < prefixGates.length := by simpa [D] using hj
       have oldmem : prefixGates[j] ∈ C.gates :=
         (List.take_sublist n C.gates).subset (List.getElem_mem hp)
+      obtain ⟨op, arity⟩ := fan _ oldmem
       rw [← hgj]
-      simpa [D, clip, FanInTwo] using fan _ oldmem
+      simp only [D, List.getElem_mapIdx, clip, List.length_map]
+      exact ⟨op, arity⟩
     have dreads : ∀ (j : ℕ) (hj : j < D.gates.length),
         ∀ a ∈ D.gates[j].inputs, a < 11 + j ∨ a = 24 := by
       intro j hj a ha
@@ -121,6 +124,6 @@ theorem PEqualNP.Outside.R_meta_3406_617
     change ((C.gates.foldl step (input x)).getD C.output false) ≠ _
     have past : (C.gates.foldl step (input x)).length ≤ C.output := by
       rw [foldLen, inputLen]
-      simpa [Circuit.size] using Nat.le_of_not_gt valid
+      exact Nat.le_of_not_gt valid
     rw [List.getD_eq_default _ _ past]
     decide
